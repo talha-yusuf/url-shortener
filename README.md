@@ -10,14 +10,37 @@ A simple, lightweight URL shortening service built with Go. This web application
 - **REST API**: Programmatic access via HTTP endpoints
 - **In-Memory Storage**: Fast access with no database dependencies
 - **Click Tracking**: Monitor how many times each shortened URL is accessed
+- **Clean Architecture**: Well-organized package structure following Go best practices
 
-## Screenshots
+## Project Structure
 
-### Home Page
-The main interface where users can create shortened URLs through a simple form.
-
-### Analytics Dashboard
-View statistics including total URLs, total clicks, average clicks per URL, and detailed breakdown of all shortened URLs.
+```
+url-shortener/
+├── cmd/
+│   └── server/
+│       └── main.go                 # Application entry point
+├── internal/
+│   ├── handlers/                   # HTTP request handlers
+│   │   ├── home.go                 # Home page handler
+│   │   ├── create.go               # URL creation handler
+│   │   ├── redirect.go             # URL redirection handler
+│   │   └── analytics.go            # Analytics handler
+│   ├── models/                     # Data structures
+│   │   └── url.go                  # URL and Stats models
+│   ├── storage/                    # Data storage layer
+│   │   ├── storage.go              # Storage interface
+│   │   └── memory.go               # In-memory implementation
+│   ├── templates/                  # HTML templates
+│   │   ├── home.go                 # Home page template
+│   │   ├── create.go               # Create form template
+│   │   ├── success.go              # Success page template
+│   │   ├── error.go                # Error page template
+│   │   └── analytics.go            # Analytics page template
+│   └── utils/                      # Utility functions
+│       └── response.go             # HTTP response helpers
+├── go.mod                          # Go module definition
+└── README.md                       # This file
+```
 
 ## Installation
 
@@ -35,11 +58,24 @@ View statistics including total URLs, total clicks, average clicks per URL, and 
 
 2. **Run the application**
    ```bash
-   go run main.go
+   go run cmd/server/main.go
    ```
 
 3. **Access the web interface**
    Open your browser and navigate to `http://localhost:8080`
+
+### Alternative Commands
+
+```bash
+# Build the application
+go build cmd/server/main.go
+
+# Run the built binary
+./main
+
+# Run with specific port (if you modify the code)
+PORT=3000 go run cmd/server/main.go
+```
 
 ## Usage
 
@@ -101,9 +137,43 @@ Visit `http://localhost:8080/analytics` to see the analytics dashboard.
 | GET | `/{shortCode}` | Redirect to original URL |
 | GET | `/analytics` | Analytics dashboard |
 
+## Architecture
+
+### Package Design
+
+The application follows a clean architecture pattern with clear separation of concerns:
+
+- **`cmd/server/`**: Application entry point and server configuration
+- **`internal/handlers/`**: HTTP request handlers with dependency injection
+- **`internal/models/`**: Data structures and business logic models
+- **`internal/storage/`**: Data persistence layer with interface-based design
+- **`internal/templates/`**: HTML template management
+- **`internal/utils/`**: Shared utility functions
+
+### Data Flow
+
+1. **Request** → HTTP handler receives request
+2. **Validation** → Handler validates input data
+3. **Business Logic** → Storage layer processes the request
+4. **Response** → Template renders and returns HTML response
+
+### Storage Interface
+
+The application uses an interface-based storage design for better testability:
+
+```go
+type URLStorage interface {
+    Create(originalURL string) (*models.URL, error)
+    Get(shortCode string) (*models.URL, error)
+    IncrementClicks(shortCode string) error
+    GetAll() ([]*models.URL, error)
+    GetStats() (*models.Stats, error)
+}
+```
+
 ## Data Structure
 
-The application uses the following data structure for URLs:
+The application uses the following data structures:
 
 ```go
 type URL struct {
@@ -112,6 +182,12 @@ type URL struct {
     OriginalURL string
     CreatedAt   time.Time
     ClickCount  int
+}
+
+type Stats struct {
+    TotalURLs     int
+    TotalClicks   int
+    AverageClicks float64
 }
 ```
 
@@ -136,10 +212,36 @@ type URL struct {
 ## Technical Details
 
 - **Language**: Go 1.22.0
+- **Architecture**: Clean architecture with dependency injection
 - **Storage**: In-memory map (data is lost on server restart)
 - **Server**: Built-in Go HTTP server
 - **Port**: 8080 (configurable in main.go)
 - **Dependencies**: Standard library only (no external dependencies)
+- **Package Structure**: Follows Go project layout conventions
+
+## Development
+
+### Adding New Features
+
+The modular structure makes it easy to add new features:
+
+1. **New Handlers**: Add to `internal/handlers/`
+2. **New Models**: Add to `internal/models/`
+3. **New Storage**: Implement the `URLStorage` interface
+4. **New Templates**: Add to `internal/templates/`
+
+### Testing
+
+Each package can be tested independently:
+
+```bash
+# Test all packages
+go test ./...
+
+# Test specific package
+go test ./internal/handlers
+go test ./internal/storage
+```
 
 ## Limitations
 
@@ -162,14 +264,25 @@ Potential improvements for this project:
 - [ ] Configuration file support
 - [ ] More detailed analytics (referrer tracking, geographic data)
 - [ ] API rate limiting and authentication
+- [ ] Unit tests for all packages
+- [ ] Integration tests
+- [ ] CI/CD pipeline
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes following the existing package structure
+4. Add tests for new functionality
+5. Test thoroughly (`go test ./...`)
+6. Submit a pull request
+
+### Code Style
+
+- Follow Go conventions and formatting (`gofmt`)
+- Use meaningful package and function names
+- Add comments for exported functions
+- Keep functions small and focused
 
 ## License
 
